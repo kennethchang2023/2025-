@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>张氏企业抽奖答谢活动</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a3a, #0a0a1a);
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #lottery-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 100;
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            background: linear-gradient(45deg, #ff7300, #ff004c);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 115, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 115, 0, 0.6);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #result-display {
+            position: absolute;
+            top: 120px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #result-display.final-message {
+            color: #ffcc00;
+            font-size: 40px;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.8);
+        }
+        .winner-spotlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 90;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            z-index: 80;
+        }
+        #event-title {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 32px; /* 调整标题字体大小，从 42px 改为 32px */
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            z-index: 100;
+        }
+        #prize-info {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 100;
+            width: 220px;
+        }
+        #results-list {
+            position: absolute;
+            top: 240px;
+            left: 20px;
+            width: 220px;
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #eee;
+        }
+        #results-list h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #ffcc00;
+            font-size: 18px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 204, 0, 0.3);
+            padding-bottom: 5px;
+        }
+        .result-prize-group {
+            margin-bottom: 12px;
+        }
+        .result-prize-group strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        .result-winners span {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            padding: 2px 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .prize-item {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .first-prize {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        .second-prize {
+            color: #c0c0c0;
+            font-weight: bold;
+        }
+        .third-prize {
+            color: #cd7f32;
+            font-weight: bold;
+        }
+        .other-prize {
+            color: #98FB98;
+        }
+        #prize-selector {
+            position: absolute;
+            left: 20px;
+            bottom: 100px; /* 上移选择抽取选项，从 40px 改为 100px */
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 100;
+        }
+        #prize-selector select {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            width: 150px;
+            cursor: pointer;
+        }
+        #audio-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        #audio-controls button {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="event-title">张氏企业抽奖答谢活动</div>
+        <div id="prize-info">
+            <div class="prize-item first-prize">一等奖：1名 - 奖金5000元</div>
+            <div class="prize-item second-prize">二等奖：2名 - 奖金3000元</div>
+            <div class="prize-item third-prize">三等奖：3名 - 奖金2000元</div>
+            <div class="prize-item other-prize">优胜奖：若干 - 奖金1000元</div>
+        </div>
+        <div id="results-list">
+            <h3>中奖名单</h3>
+        </div>
+        <div id="result-display"></div>
+        <div class="winner-spotlight"></div>
+        <div id="prize-selector">
+            <label for="prize-level">选择抽取奖项:</label>
+            <select id="prize-level">
+                <option value="first" selected>一等奖</option>
+                <option value="second">二等奖</option>
+                <option value="third">三等奖</option>
+                <option value="other">优胜奖</option>
+            </select>
+        </div>
+        <div id="audio-controls">
+            <button id="toggle-music">播放/暂停音乐</button>
+        </div>
+        <div id="lottery-controls">
+            <button id="start-btn">开始抽奖</button>
+            <button id="stop-btn" disabled>停止抽奖</button>
+        </div>
+        <audio id="background-music" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script>
+        // === Basic Setup ===
+        const container = document.getElementById('container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+        container.appendChild(renderer.domElement);
+        camera.position.z = 18;
+
+        // === Audio Setup ===
+        const backgroundMusic = document.getElementById('background-music');
+        const toggleMusicBtn = document.getElementById('toggle-music');
+        let musicPlayedOnce = false;
+
+        // 改进音频播放逻辑，添加错误处理
+        toggleMusicBtn.addEventListener('click', () => {
+            if (backgroundMusic.paused) {
+                backgroundMusic.play()
+                    .then(() => {
+                        musicPlayedOnce = true;
+                        toggleMusicBtn.textContent = "暂停音乐";
+                    })
+                    .catch(err => {
+                        console.error("音频播放失败:", err);
+                        alert("无法播放音乐，请检查网络或稍后重试。");
+                    });
+            } else {
+                backgroundMusic.pause();
+                toggleMusicBtn.textContent = "播放音乐";
+            }
+        });
+
+        // 监听音频播放结束或错误
+        backgroundMusic.addEventListener('ended', () => {
+            toggleMusicBtn.textContent = "播放音乐";
+        });
+        backgroundMusic.addEventListener('error', (e) => {
+            console.error("音频加载或播放错误:", e);
+            alert("音乐加载失败，请检查网络或稍后重试。");
+        });
+
+        // === Prize & History Setup ===
+        const prizeHistory = { first: [], second: [], third: [], other: [] };
+        const prizeConfig = {
+            first: { name: "一等奖", count: 1, amount: 5000, color: 0xffcc00 },
+            second: { name: "二等奖", count: 2, amount: 3000, color: 0xc0c0c0 },
+            third: { name: "三等奖", count: 3, amount: 2000, color: 0xcd7f32 },
+            other: { name: "优胜奖", count: 999, amount: 1000, color: 0x98FB98 }
+        };
+
+        // === Lighting ===
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 0.8, 100); pointLight.position.set(5, 15, 15); scene.add(pointLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4); directionalLight.position.set(-5, 10, 5); scene.add(directionalLight);
+
+        // === Core Visuals ===
+        const mainGroup = new THREE.Group(); scene.add(mainGroup);
+
+        const sphereGeometry = new THREE.SphereGeometry(5, 64, 64);
+        const sphereMaterial = new THREE.MeshPhongMaterial({
+            color: 0x222299,
+            transparent: true,
+            opacity: 0.15,
+            emissive: 0x111133,
+            shininess: 50
+        });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        mainGroup.add(sphere);
+
+        const discGeometry = new THREE.RingGeometry(4.9, 5, 64);
+        const discMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const disc = new THREE.Mesh(discGeometry, discMaterial);
+        disc.rotation.x = Math.PI / 2; mainGroup.add(disc);
+
+        const particlesCount = 2000;
+        const positions = new Float32Array(particlesCount * 3);
+        const colors = new Float32Array(particlesCount * 3);
+        const baseColor = new THREE.Color(0x00ffff);
+        for (let i = 0; i < particlesCount; i++) {
+            const radius = 5.5 + Math.random() * 1.0;
+            const phi = Math.acos(-1 + (2 * Math.random()));
+            const theta = Math.sqrt(particlesCount * Math.PI * Math.random()) * phi * (Math.random() > 0.5 ? 1 : -1);
+            positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i * 3 + 2] = radius * Math.cos(phi);
+            const colorVariation = (Math.random() - 0.5) * 0.3;
+            const particleColor = baseColor.clone().offsetHSL(colorVariation, 0, 0);
+            colors[i * 3] = particleColor.r;
+            colors[i * 3 + 1] = particleColor.g;
+            colors[i * 3 + 2] = particleColor.b;
+        }
+        const particlesGeometry = new THREE.BufferGeometry();
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.08,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true
+        });
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        mainGroup.add(particles);
+
+        const nameGroup = new THREE.Group(); scene.add(nameGroup);
+
+        // === State & DOM Elements ===
+        let participants = ["张尚宏", "张鲲", "张莉", "欧阳霞英", "刘亚丽", "朱秒雅", "朱泽望", "张恩赫", "朱宇清"];
+        let nameBalls = [];
+        let isRotating = false;
+        let rotationSpeed = 0.05;
+        let initialRotationSpeed = 0.05;
+        let slowdownFactor = 0.99;
+        let winner = null;
+        let highlightBall = null;
+        let stopRequested = false;
+        let currentPrizeLevel = "first";
+        let isLotteryFinished = false;
+
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resultDisplay = document.getElementById('result-display');
+        const prizeLevelSelect = document.getElementById('prize-level');
+        const winnerSpotlight = document.querySelector('.winner-spotlight');
+        const resultsListContainer = document.getElementById('results-list');
+
+        // === Core Functions ===
+        function updateResultsDisplay() {
+            resultsListContainer.innerHTML = '<h3>中奖名单</h3>';
+            const prizeOrder = ['first', 'second', 'third', 'other'];
+            prizeOrder.forEach(level => {
+                const winners = prizeHistory[level];
+                const config = prizeConfig[level];
+                if (winners && winners.length > 0) {
+                    const prizeGroupDiv = document.createElement('div');
+                    prizeGroupDiv.className = 'result-prize-group';
+                    const prizeNameStrong = document.createElement('strong');
+                    prizeNameStrong.className = `${level}-prize`;
+                    prizeNameStrong.textContent = `${config.name} (${winners.length}/${config.count === 999 ? '不限' : config.count})：`;
+                    prizeGroupDiv.appendChild(prizeNameStrong);
+                    const winnersDiv = document.createElement('div');
+                    winnersDiv.className = 'result-winners';
+                    winners.forEach(winnerName => {
+                        const winnerSpan = document.createElement('span');
+                        winnerSpan.textContent = winnerName;
+                        winnersDiv.appendChild(winnerSpan);
+                    });
+                    prizeGroupDiv.appendChild(winnersDiv);
+                    resultsListContainer.appendChild(prizeGroupDiv);
+                }
+            });
+            if (resultsListContainer.children.length <= 1) {
+                const noWinnersP = document.createElement('p');
+                noWinnersP.textContent = '暂无中奖记录';
+                noWinnersP.style.textAlign = 'center';
+                noWinnersP.style.color = '#aaa';
+                resultsListContainer.appendChild(noWinnersP);
+            }
+        }
+
+        prizeLevelSelect.addEventListener('change', function(e) {
+            currentPrizeLevel = e.target.value;
+            console.log("当前奖项已选择:", currentPrizeLevel);
+        });
+
+        function createNameBall(name, index, total) {
+            const radius = 4;
+            const goldenRatio = (1 + Math.sqrt(5)) / 2;
+            const i = index + 0.5;
+            const phi = Math.acos(1 - 2 * i / total);
+            const theta = 2 * Math.PI * i / goldenRatio;
+            const x = radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.sin(phi) * Math.sin(theta);
+            const z = radius * Math.cos(phi);
+            const ballGeometry = new THREE.SphereGeometry(0.4, 24, 24);
+            const ballMaterial = new THREE.MeshPhongMaterial({
+                color: new THREE.Color().setHSL(index / total, 0.8, 0.6),
+                transparent: true,
+                opacity: 0.9,
+                emissive: new THREE.Color().setHSL(index / total, 0.5, 0.2),
+                shininess: 60
+            });
+            const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            ball.position.set(x, y, z);
+            ball.userData = {
+                name: name,
+                originalColor: ball.material.color.clone(),
+                originalEmissive: ball.material.emissive.clone()
+            };
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const fontSize = 20;
+            const padding = 10;
+            context.font = `bold ${fontSize}px Arial`;
+            const textWidth = context.measureText(name).width;
+            canvas.width = textWidth + padding * 2;
+            canvas.height = fontSize + padding * 2;
+            context.fillStyle = 'rgba(0, 0, 0, 0)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = 'white';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.shadowColor = "rgba(0, 0, 0, 0.7)";
+            context.shadowOffsetX = 1;
+            context.shadowOffsetY = 1;
+            context.shadowBlur = 2;
+            context.fillText(name, canvas.width / 2, canvas.height / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            const labelMaterial = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false,
+                sizeAttenuation: true
+            });
+            const label = new THREE.Sprite(labelMaterial);
+            const scaleFactor = 0.015;
+            label.scale.set(canvas.width * scaleFactor, canvas.height * scaleFactor, 1);
+            label.position.set(0, 0.6, 0);
+            ball.add(label);
+            nameGroup.add(ball);
+            return ball;
+        }
+
+        function createNameBalls() {
+            while (nameGroup.children.length > 0) {
+                const child = nameGroup.children[0];
+                nameGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (child.material.map) child.material.map.dispose();
+                    child.material.dispose();
+                }
+                child.children.forEach(label => {
+                    if (label instanceof THREE.Sprite && label.material) {
+                        if (label.material.map) label.material.map.dispose();
+                        label.material.dispose();
+                    }
+                });
+            }
+            nameBalls = [];
+            const availableParticipants = filterParticipants(participants);
+            if (availableParticipants.length === 0) {
+                console.log("No eligible participants to create balls for.");
+                return;
+            }
+            availableParticipants.forEach((name, index) => {
+                const ball = createNameBall(name, index, availableParticipants.length);
+                nameBalls.push(ball);
+            });
+            console.log("创建了 " + nameBalls.length + " 个姓名球体。");
+        }
+
+        function filterParticipants(allParticipants) {
+            const allWinnersSet = new Set([...prizeHistory.first, ...prizeHistory.second, ...prizeHistory.third, ...prizeHistory.other]);
+            return allParticipants.filter(name => !allWinnersSet.has(name));
+        }
+
+        function isPrizeLimitReached() {
+            return prizeHistory[currentPrizeLevel].length >= prizeConfig[currentPrizeLevel].count;
+        }
+
+        function checkIfAllPrizesDrawn() {
+            const firstPrizeFull = prizeHistory.first.length >= prizeConfig.first.count;
+            const secondPrizeFull = prizeHistory.second.length >= prizeConfig.second.count;
+            const thirdPrizeFull = prizeHistory.third.length >= prizeConfig.third.count;
+            return firstPrizeFull && secondPrizeFull && thirdPrizeFull;
+        }
+
+        createNameBalls();
+        updateResultsDisplay();
+
+        let lastTime = 0;
+        function animate(time) {
+            const delta = (time - lastTime) * 0.001;
+            lastTime = time;
+            requestAnimationFrame(animate);
+            mainGroup.rotation.y += 0.005 + rotationSpeed * 0.1;
+            mainGroup.rotation.x += 0.003 + rotationSpeed * 0.05;
+            if (isRotating) {
+                const axis = new THREE.Vector3(Math.random() - 0.5, 1, Math.random() - 0.5).normalize();
+                const rotation = new THREE.Quaternion().setFromAxisAngle(axis, rotationSpeed * 5);
+                nameGroup.quaternion.premultiply(rotation);
+                if (stopRequested && rotationSpeed > 0.0005) {
+                    rotationSpeed *= (slowdownFactor - (1 - slowdownFactor) * 0.1);
+                } else if (stopRequested && rotationSpeed <= 0.0005) {
+                    showWinner();
+                }
+            }
+            const cameraWorldPosition = new THREE.Vector3();
+            camera.getWorldPosition(cameraWorldPosition);
+            nameBalls.forEach(ball => {
+                ball.children.forEach(child => {
+                    if (child instanceof THREE.Sprite) {
+                        child.lookAt(cameraWorldPosition);
+                    }
+                });
+            });
+            if (highlightBall) {
+                const pulseFactor = 0.5 + Math.sin(time * 0.005) * 0.5;
+                highlightBall.material.emissiveIntensity = pulseFactor * 1.5 + 0.5;
+                highlightBall.scale.setScalar(1 + pulseFactor * 0.1);
+            }
+            renderer.render(scene, camera);
+        }
+
+        function startLottery() {
+            if (isLotteryFinished) {
+                alert("抽奖已全部结束！");
+                return;
+            }
+            if (isPrizeLimitReached()) {
+                alert(`${prizeConfig[currentPrizeLevel].name} (${prizeHistory[currentPrizeLevel].length}/${prizeConfig[currentPrizeLevel].count}) 名额已满！`);
+                return;
+            }
+            createNameBalls();
+            if (nameBalls.length === 0) {
+                alert("没有符合条件的参与者可供抽奖！");
+                return;
+            }
+            if (musicPlayedOnce || !backgroundMusic.paused) {
+                backgroundMusic.play().catch(err => console.log("开始抽奖时播放音频失败:", err));
+            }
+            isRotating = true;
+            rotationSpeed = initialRotationSpeed;
+            stopRequested = false;
+            winner = null;
+            resultDisplay.className = '';
+            if (highlightBall) {
+                highlightBall.material.emissive.copy(highlightBall.userData.originalEmissive);
+                highlightBall.material.emissiveIntensity = 1.0;
+                highlightBall.scale.set(1, 1, 1);
+                highlightBall = null;
+            }
+            resultDisplay.style.opacity = 0;
+            winnerSpotlight.style.opacity = 0;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            prizeLevelSelect.disabled = true;
+        }
+
+        function stopLottery() {
+            if (!isRotating || stopRequested) return;
+            stopRequested = true;
+            stopBtn.disabled = true;
+            if (nameBalls.length > 0) {
+                const winnerIndex = Math.floor(Math.random() * nameBalls.length);
+                winner = nameBalls[winnerIndex].userData.name;
+                console.log("选定获胜者 (动画停止前):", winner);
+            } else {
+                console.error("停止抽奖，但没有可用的参与者球体!");
+                isRotating = false;
+                rotationSpeed = 0;
+                stopRequested = false;
+                winner = null;
+                startBtn.disabled = false;
+                prizeLevelSelect.disabled = false;
+                alert("没有可抽奖的参与者！");
+            }
+        }
+
+        function showWinner() {
+            if (!winner || !stopRequested) {
+                if (stopRequested && !winner && !isRotating) {
+                    console.log("ShowWinner: Stop requested but no winner, resetting UI.");
+                    startBtn.disabled = false;
+                    prizeLevelSelect.disabled = false;
+                    stopRequested = false;
+                } else {
+                    console.log("ShowWinner called prematurely or without winner/stop request.");
+                }
+                return;
+            }
+            isRotating = false;
+            rotationSpeed = 0;
+            const prizeInfo = prizeConfig[currentPrizeLevel];
+            if (!prizeHistory[currentPrizeLevel].includes(winner)) {
+                prizeHistory[currentPrizeLevel].push(winner);
+                console.log("获胜者已添加到历史:", currentPrizeLevel, winner, prizeHistory);
+                updateResultsDisplay();
+            } else {
+                console.log("获胜者本轮已在历史中:", currentPrizeLevel, winner);
+            }
+
+            resultDisplay.className = '';
+            resultDisplay.textContent = `恭喜 ${winner} 获得 ${prizeInfo.name}！奖金 ${prizeInfo.amount} 元`;
+            resultDisplay.style.opacity = 1;
+            winnerSpotlight.style.opacity = 1;
+            highlightBall = nameBalls.find(ball => ball.userData.name === winner);
+            if (highlightBall) {
+                if (!highlightBall.userData.originalEmissive) {
+                    highlightBall.userData.originalEmissive = highlightBall.material.emissive.clone();
+                }
+                highlightBall.material.emissive.setHex(prizeInfo.color);
+                highlightBall.material.needsUpdate = true;
+                highlightBall.material.emissiveIntensity = 1.0;
+            } else {
+                console.warn("未找到获胜者的球体:", winner);
+            }
+            createConfetti();
+
+            if (checkIfAllPrizesDrawn() && currentPrizeLevel !== 'other') {
+                isLotteryFinished = true;
+                console.log("所有主要奖项已抽取完毕！");
+                setTimeout(() => {
+                    resultDisplay.textContent = "抽奖结束，平安吉祥。";
+                    resultDisplay.className = 'final-message';
+                    resultDisplay.style.opacity = 1;
+                    winnerSpotlight.style.opacity = 0;
+                    if (highlightBall) {
+                        highlightBall.material.emissive.copy(highlightBall.userData.originalEmissive);
+                        highlightBall.material.emissiveIntensity = 1.0;
+                        highlightBall.scale.set(1, 1, 1);
+                        highlightBall = null;
+                    }
+                    startBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    prizeLevelSelect.disabled = true;
+                }, 3000);
+            } else {
+                startBtn.disabled = false;
+                stopRequested = false;
+                prizeLevelSelect.disabled = false;
+            }
+        }
+
+        function createConfetti() {
+            const confettiCount = 150;
+            const prizeColor = new THREE.Color(prizeConfig[currentPrizeLevel].color);
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                const colors = [
+                    `rgb(${Math.floor(prizeColor.r * 255)}, ${Math.floor(prizeColor.g * 255)}, ${Math.floor(prizeColor.b * 255)})`,
+                    '#FFDA61', '#ffffff', '#FF6B6B', '#4ECDC4', '#F7FFF7'
+                ];
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 8 + 4;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.opacity = Math.random() * 0.5 + 0.5;
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = `-${size * 2}px`;
+                container.appendChild(confetti);
+                const animationDuration = Math.random() * 4 + 3;
+                const fallDelay = Math.random() * 1;
+                const horizontalMovement = (Math.random() - 0.5) * window.innerWidth * 0.5;
+                const rotation = Math.random() * 720 - 360;
+                confetti.animate([
+                    { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translate(${horizontalMovement}px, ${window.innerHeight + size * 2}px) rotate(${rotation}deg)`, opacity: 0 }
+                ], {
+                    duration: animationDuration * 1000,
+                    delay: fallDelay * 1000,
+                    easing: 'ease-out'
+                }).onfinish = () => confetti.remove();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        startBtn.addEventListener('click', startLottery);
+        stopBtn.addEventListener('click', stopLottery);
+
+        animate(0);
+    </script>
+</body>
+</html>
