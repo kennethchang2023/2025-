@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>张氏企业抽奖答谢活动</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* --- 基本样式 --- */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a3a, #0a0a1a);
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- 布局与元素样式 (已优化防重叠) --- */
+        #event-title {
+            position: absolute;
+            top: 20px; /* 标题距离顶部距离 */
+            left: 20px; /* 增加左边距，给右上角按钮留空间 */
+            right: 20px; /* 增加右边距 */
+            text-align: center;
+            font-size: 28px; /* 在原基础上再稍微缩小一点标题，适应移动端 */
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            z-index: 100;
+        }
+
+        #audio-controls {
+            position: absolute;
+            top: 20px; /* 保持顶部距离 */
+            right: 20px; /* 改为 right，移动到右上角 */
+            z-index: 110; /* 确保在最上层 */
+        }
+        #audio-controls button {
+            padding: 6px 12px; /* 稍微减小按钮内边距 */
+            font-size: 13px; /* 稍微减小按钮字体 */
+            background: rgba(255, 255, 255, 0.15); /* 给按钮加点背景以便区分 */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            /* --- 继承或覆盖基础按钮样式 --- */
+            color: white;
+            cursor: pointer;
+            box-shadow: none; /* 移除底部大按钮的阴影 */
+            transition: background 0.3s ease;
+        }
+         #audio-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: none; /* 移除大按钮的 hover 效果 */
+            box-shadow: none;
+         }
+         #audio-controls button:active {
+            transform: translateY(1px); /* 保留点击反馈 */
+         }
+
+        #prize-info {
+            position: absolute;
+            top: 75px; /* 调整与标题的距离 */
+            left: 15px; /* 稍微减小左边距 */
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px; /* 统一圆角 */
+            padding: 10px;    /* 减小内边距 */
+            z-index: 100;
+            /* width: calc(100% - 100px);  <-- 暂时不用计算宽度，用最大宽度限制 */
+            max-width: 240px; /* 限制最大宽度 */
+            font-size: 14px; /* 调整字体大小 */
+            border: 1px solid rgba(255, 255, 255, 0.15); /* 可选：加个细边框 */
+        }
+        .prize-item {
+             margin-bottom: 5px;
+             font-size: 14px; /* 确保字体大小一致 */
+         }
+        .first-prize { color: #ffcc00; font-weight: bold; }
+        .second-prize { color: #c0c0c0; font-weight: bold; }
+        .third-prize { color: #cd7f32; font-weight: bold; }
+        .other-prize { color: #98FB98; }
+
+        #results-list {
+            position: absolute;
+            /* top: 240px; <-- 删除固定的 top 值 */
+            /* !!! 注意: 下面的 140px 是估算值, 请根据 #prize-info 的实际内容高度测试调整 !!! */
+            top: calc(75px + 140px + 10px); /* prize-info top + prize-info估算高度 + 间距 */
+            left: 15px; /* 与 prize-info 对齐 */
+            /* width: calc(100% - 100px); <-- 同 prize-info */
+            max-width: 240px; /* 同 prize-info */
+            max-height: calc(100vh - 360px); /* 调整最大高度计算，考虑其他元素 */
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px; /* 减小内边距 */
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #eee;
+        }
+        #results-list h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #ffcc00;
+            font-size: 16px; /* 调整字体 */
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 204, 0, 0.3);
+            padding-bottom: 4px;
+         }
+        .result-prize-group { margin-bottom: 10px; }
+        .result-prize-group strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px; /* 调整字体 */
+         }
+        .result-winners span {
+            display: inline-block;
+            margin-right: 6px; /* 调整间距 */
+            margin-bottom: 4px;
+            padding: 2px 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            font-size: 12px; /* 调整字体 */
+        }
+
+        #prize-selector {
+            position: absolute;
+            left: 15px; /* 与信息框对齐 */
+            bottom: 110px; /* 稍微上移，给底部按钮留空间 */
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px; /* 减小内边距 */
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.15); /* 可选：加个细边框 */
+        }
+         #prize-selector label { /* 给标签也设置样式 */
+            font-size: 14px;
+            margin-right: 5px;
+            display: block; /* 让标签单独一行 */
+            margin-bottom: 5px;
+         }
+        #prize-selector select {
+            padding: 6px; /* 调整内边距 */
+            font-size: 14px; /* 调整字体 */
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            width: 150px; /* 可根据需要调整宽度 */
+            cursor: pointer;
+        }
+
+        #lottery-controls {
+            position: absolute;
+            bottom: 30px; /* 稍微上移按钮 */
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* 减小按钮间距 */
+            z-index: 100;
+        }
+        /* --- 底部控制按钮基础样式 --- */
+        button { /* 这是底部按钮的样式 */
+            padding: 10px 25px; /* 调整按钮大小 */
+            font-size: 16px; /* 调整字体大小 */
+            border: none;
+            border-radius: 25px; /* 调整圆角 */
+            cursor: pointer;
+            background: linear-gradient(45deg, #ff7300, #ff004c);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 115, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 115, 0, 0.6);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 5px 15px rgba(255, 115, 0, 0.4); /* 保持阴影避免跳动 */
+        }
+
+        /* --- 中奖结果显示 --- */
+        #result-display {
+            position: absolute;
+            top: 50%; /* 尝试垂直居中显示结果 */
+            left: 50%;
+            transform: translate(-50%, -50%); /* 配合 top/left 50% 实现居中 */
+            width: 90%; /* 限制宽度避免太宽 */
+            text-align: center;
+            font-size: 28px; /* 调整字体大小 */
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+            z-index: 120; /* 比其他UI元素层级高 */
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            background-color: rgba(0, 0, 0, 0.5); /* 可选：加个半透明背景 */
+            padding: 15px;
+            border-radius: 10px;
+            box-sizing: border-box; /* 防止 padding 影响宽度 */
+        }
+        #result-display.final-message {
+            color: #ffcc00;
+            font-size: 32px; /* 结束语字体大小 */
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.8);
+        }
+
+        /* --- 其他效果 --- */
+        .winner-spotlight {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 90;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px; height: 10px;
+            background-color: #f00; /* 会被 JS 覆盖 */
+            z-index: 130; /* 比结果显示更高 */
+            pointer-events: none; /* 避免挡住下方元素 */
+        }
+
+        /* --- 响应式布局：针对小屏幕优化 (例如微信浏览器) --- */
+        @media (max-width: 480px) { /* 调整断点宽度 */
+             #event-title {
+                font-size: 22px; /* 对非常小的屏幕进一步缩小标题 */
+                top: 15px; /* 标题再向上一点 */
+                left: 15px;
+                right: 60px; /* 给右上角按钮留足空间 */
+                text-align: left; /* 标题靠左显示，避免与右上角按钮冲突 */
+            }
+             #audio-controls {
+                 top: 15px;
+                 right: 15px;
+             }
+             #audio-controls button {
+                padding: 5px 10px;
+                font-size: 12px;
+             }
+            #prize-info {
+                 top: 55px; /* 根据标题位置调整 */
+                 left: 10px;
+                 right: 10px; /* 左右留边距 */
+                 width: auto; /* 宽度自动 */
+                 max-width: none; /* 取消最大宽度限制 */
+                 padding: 8px;
+                 font-size: 12px; /* 进一步缩小字体 */
+             }
+             .prize-item {
+                 font-size: 12px;
+                 margin-bottom: 3px;
+             }
+            #results-list {
+                 /* !!! 注意: 下面的 90px 是估算值, 请根据 #prize-info 的实际内容高度测试调整 !!! */
+                 top: calc(55px + 90px + 8px); /* 基于 prize-info 的新 top + 估算高度 + 间距 */
+                 left: 10px;
+                 right: 10px;
+                 width: auto;
+                 max-width: none;
+                 padding: 8px;
+                 max-height: calc(100vh - (55px + 90px + 8px) - 160px); /* 重新计算高度, 减去顶部和底部空间 */
+             }
+            #results-list h3 { font-size: 14px; margin-bottom: 5px; }
+            .result-prize-group strong { font-size: 13px; margin-bottom: 3px; }
+            .result-winners span { font-size: 11px; padding: 1px 4px; margin-right: 4px;}
+
+            #prize-selector {
+                left: 10px;
+                bottom: 75px; /* 根据底部按钮位置调整 */
+                padding: 8px;
+            }
+             #prize-selector label {
+                 font-size: 13px;
+             }
+             #prize-selector select {
+                 font-size: 13px;
+                 padding: 5px;
+                 width: 100px; /* 缩小选择框 */
+             }
+             #lottery-controls {
+                 bottom: 20px; /* 调整底部按钮位置 */
+                 gap: 10px;
+             }
+             #lottery-controls button {
+                  padding: 8px 20px;
+                  font-size: 14px;
+                  border-radius: 20px;
+             }
+             #result-display {
+                 font-size: 20px; /* 缩小结果字体 */
+                 padding: 10px;
+             }
+             #result-display.final-message {
+                 font-size: 24px;
+             }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="event-title">张氏企业抽奖答谢活动</div>
+
+        <div id="audio-controls">
+            <button id="toggle-music">播放音乐</button> </div>
+
+        <div id="prize-info">
+            <div class="prize-item first-prize">一等奖：1名 - 奖金5000元</div>
+            <div class="prize-item second-prize">二等奖：2名 - 奖金3000元</div>
+            <div class="prize-item third-prize">三等奖：3名 - 奖金2000元</div>
+            <div class="prize-item other-prize">优胜奖：若干 - 奖金1000元</div>
+        </div>
+
+        <div id="results-list">
+            <h3>中奖名单</h3>
+            </div>
+
+        <div id="prize-selector">
+            <label for="prize-level">选择抽取奖项:</label>
+            <select id="prize-level">
+                <option value="first" selected>一等奖</option>
+                <option value="second">二等奖</option>
+                <option value="third">三等奖</option>
+                <option value="other">优胜奖</option>
+            </select>
+        </div>
+
+        <div id="result-display"></div> <div class="winner-spotlight"></div> <div id="lottery-controls">
+            <button id="start-btn">开始抽奖</button>
+            <button id="stop-btn" disabled>停止抽奖</button>
+        </div>
+
+        <audio id="background-music" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+            您的浏览器不支持 audio 标签。
+        </audio>
+    </div>
+
+    <script>
+        // === Basic Setup ===
+        const container = document.getElementById('container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0); // 使渲染器背景透明
+        container.insertBefore(renderer.domElement, container.firstChild); // 将canvas插入到最底层
+        camera.position.z = 18;
+
+        // === Audio Setup ===
+        const backgroundMusic = document.getElementById('background-music');
+        const toggleMusicBtn = document.getElementById('toggle-music');
+        let musicPlayedOnce = false; // 标记是否已手动播放过
+
+        toggleMusicBtn.addEventListener('click', () => {
+            if (backgroundMusic.paused) {
+                backgroundMusic.play()
+                    .then(() => {
+                        musicPlayedOnce = true;
+                        toggleMusicBtn.textContent = "暂停音乐";
+                    })
+                    .catch(err => {
+                        console.error("音频播放失败:", err);
+                        // 在移动端，首次播放通常需要用户交互，这里可能因为没有交互而失败
+                        if (!musicPlayedOnce) {
+                             alert("无法自动播放音乐，请尝试再次点击播放。");
+                        } else {
+                             alert("播放音乐时出错，请检查网络或稍后重试。");
+                        }
+                    });
+            } else {
+                backgroundMusic.pause();
+                toggleMusicBtn.textContent = "播放音乐";
+            }
+        });
+
+        // 监听音频事件更新按钮状态
+        backgroundMusic.addEventListener('play', () => {
+            toggleMusicBtn.textContent = "暂停音乐";
+        });
+        backgroundMusic.addEventListener('pause', () => {
+            toggleMusicBtn.textContent = "播放音乐";
+        });
+        backgroundMusic.addEventListener('ended', () => {
+            // 如果是循环播放，ended 可能不会触发暂停状态，但以防万一
+            toggleMusicBtn.textContent = "播放音乐";
+        });
+        backgroundMusic.addEventListener('error', (e) => {
+            console.error("音频加载或播放错误:", e);
+            alert("音乐加载失败，请检查网络或音频文件URL是否正确。");
+            toggleMusicBtn.textContent = "播放音乐"; // 出错时重置按钮
+            toggleMusicBtn.disabled = true; // 可以选择禁用按钮
+        });
+
+
+        // === Prize & History Setup ===
+        // 使用 localStorage 存储中奖记录，以便刷新后保留
+        const prizeHistory = JSON.parse(localStorage.getItem('prizeHistory')) || { first: [], second: [], third: [], other: [] };
+        const prizeConfig = {
+            first: { name: "一等奖", count: 1, amount: 5000, color: 0xffcc00 },
+            second: { name: "二等奖", count: 2, amount: 3000, color: 0xc0c0c0 },
+            third: { name: "三等奖", count: 3, amount: 2000, color: 0xcd7f32 },
+            other: { name: "优胜奖", count: 999, amount: 1000, color: 0x98FB98 } // 999 代表不限数量
+        };
+
+        // === Lighting ===
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 0.9, 150); pointLight.position.set(5, 15, 20); scene.add(pointLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); directionalLight.position.set(-10, 10, 10); scene.add(directionalLight);
+
+        // === Core Visuals (3D部分) ===
+        const mainGroup = new THREE.Group(); scene.add(mainGroup); // 用于整体旋转
+
+        // 中心装饰球体 (可选，如果不需要可以注释掉)
+        const sphereGeometry = new THREE.SphereGeometry(5, 64, 64);
+        const sphereMaterial = new THREE.MeshPhongMaterial({
+            color: 0x3333ff, // 调整颜色
+            transparent: true,
+            opacity: 0.1,    // 更透明
+            emissive: 0x111133,
+            shininess: 30,
+            blending: THREE.AdditiveBlending // 混合模式
+        });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        mainGroup.add(sphere);
+
+        // 光环效果 (可选)
+        const discGeometry = new THREE.RingGeometry(4.9, 5.1, 128); // 更精细
+        const discMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const disc = new THREE.Mesh(discGeometry, discMaterial);
+        disc.rotation.x = Math.PI / 2; mainGroup.add(disc);
+
+        // 外围粒子效果
+        const particlesCount = 2500; // 增加粒子数量
+        const positions = new Float32Array(particlesCount * 3);
+        const colors = new Float32Array(particlesCount * 3);
+        const baseColor = new THREE.Color(0x00aaff); // 调整基础颜色
+        for (let i = 0; i < particlesCount; i++) {
+            const radius = 5.5 + Math.random() * 1.5; // 调整粒子分布半径
+            // 使用更均匀的球体表面分布算法 (Fibonacci Sphere)
+             const phi = Math.acos(-1 + (2 * i) / particlesCount);
+             const theta = Math.sqrt(particlesCount * Math.PI) * phi;
+
+             positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+             positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+             positions[i * 3 + 2] = radius * Math.cos(phi);
+
+            // 颜色变化
+            const colorVariation = (Math.random() - 0.5) * 0.4; // 调整颜色变化幅度
+            const particleColor = baseColor.clone().offsetHSL(colorVariation, Math.random() * 0.2 - 0.1, Math.random() * 0.1 - 0.05); // 增加饱和度和亮度的随机性
+            colors[i * 3] = particleColor.r;
+            colors[i * 3 + 1] = particleColor.g;
+            colors[i * 3 + 2] = particleColor.b;
+        }
+        const particlesGeometry = new THREE.BufferGeometry();
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.07, // 调整粒子大小
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+            depthWrite: false // 避免粒子互相遮挡问题
+        });
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        mainGroup.add(particles);
+
+        // 名字球体的容器
+        const nameGroup = new THREE.Group(); scene.add(nameGroup);
+
+        // === State & DOM Elements ===
+        // 参与者名单 (确保没有重复名字)
+        let participants = [...new Set(["张尚宏", "张鲲", "张莉", "欧阳霞英", "刘亚丽", "朱秒雅", "朱泽望", "张恩赫", "朱宇清", "王五", "李四", "赵六", "孙七", "周八", "吴九", "郑十"])]; // 增加一些名字用于测试
+        let nameBalls = []; // 存储名字球体对象
+        let isRotating = false; // 是否正在旋转抽奖
+        let rotationSpeed = 0.05; // 当前旋转速度
+        let initialRotationSpeed = 0.05; // 初始旋转速度
+        let slowdownFactor = 0.985; // 减速因子，越接近1减速越慢
+        let winner = null; // 当前中奖者名字
+        let highlightBall = null; // 当前高亮的名字球体
+        let stopRequested = false; // 是否已请求停止
+        let currentPrizeLevel = "first"; // 当前抽取的奖项等级
+        let isLotteryFinished = false; // 标记所有主要奖项是否抽完
+
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resultDisplay = document.getElementById('result-display');
+        const prizeLevelSelect = document.getElementById('prize-level');
+        const winnerSpotlight = document.querySelector('.winner-spotlight');
+        const resultsListContainer = document.getElementById('results-list');
+
+        // === Core Functions ===
+
+        // 更新 localStorage 和界面显示的中奖名单
+        function saveAndDisplayResults() {
+            localStorage.setItem('prizeHistory', JSON.stringify(prizeHistory));
+            updateResultsDisplay();
+        }
+
+        // 更新界面上的中奖名单显示
+        function updateResultsDisplay() {
+            resultsListContainer.innerHTML = '<h3>中奖名单</h3>'; // 清空旧内容并添加标题
+            const prizeOrder = ['first', 'second', 'third', 'other']; // 定义奖项显示顺序
+            let hasWinners = false; // 标记是否有任何中奖记录
+
+            prizeOrder.forEach(level => {
+                const winners = prizeHistory[level];
+                const config = prizeConfig[level];
+                if (winners && winners.length > 0) {
+                    hasWinners = true;
+                    const prizeGroupDiv = document.createElement('div');
+                    prizeGroupDiv.className = 'result-prize-group';
+
+                    const prizeNameStrong = document.createElement('strong');
+                    prizeNameStrong.className = `${level}-prize`; // 应用不同奖项的颜色样式
+                    const countLimit = config.count === 999 ? '不限' : config.count;
+                    prizeNameStrong.textContent = `${config.name} (${winners.length}/${countLimit})：`;
+                    prizeGroupDiv.appendChild(prizeNameStrong);
+
+                    const winnersDiv = document.createElement('div');
+                    winnersDiv.className = 'result-winners';
+                    winners.forEach(winnerName => {
+                        const winnerSpan = document.createElement('span');
+                        winnerSpan.textContent = winnerName;
+                        winnersDiv.appendChild(winnerSpan);
+                    });
+                    prizeGroupDiv.appendChild(winnersDiv);
+                    resultsListContainer.appendChild(prizeGroupDiv);
+                }
+            });
+
+            // 如果没有任何奖项抽出，显示提示信息
+            if (!hasWinners) {
+                const noWinnersP = document.createElement('p');
+                noWinnersP.textContent = '暂无中奖记录';
+                noWinnersP.style.textAlign = 'center';
+                noWinnersP.style.fontSize = '13px'; // 调整字体
+                noWinnersP.style.color = '#aaa';
+                noWinnersP.style.marginTop = '10px';
+                resultsListContainer.appendChild(noWinnersP);
+            }
+        }
+
+        // 监听奖项选择变化
+        prizeLevelSelect.addEventListener('change', function(e) {
+            currentPrizeLevel = e.target.value;
+            console.log("当前奖项已选择:", currentPrizeLevel);
+            // 当切换奖项时，如果当前状态不是正在抽奖，则检查并更新开始按钮状态
+            if (!isRotating) {
+                 checkAndUpdateStartButtonState();
+            }
+        });
+
+        // 创建单个名字球体和标签
+        function createNameBall(name, index, total) {
+             const radius = 4; // 球体分布的半径
+
+             // 使用 Fibonacci Sphere 算法确保名字球体均匀分布
+             const phi = Math.acos(-1 + (2 * index) / total);
+             const theta = Math.sqrt(total * Math.PI) * phi;
+
+             const x = radius * Math.sin(phi) * Math.cos(theta);
+             const y = radius * Math.sin(phi) * Math.sin(theta);
+             const z = radius * Math.cos(phi);
+
+             // 创建球体几何体和材质
+            const ballGeometry = new THREE.SphereGeometry(0.4, 24, 24);
+            const ballMaterial = new THREE.MeshPhongMaterial({
+                color: new THREE.Color().setHSL(Math.random(), 0.7, 0.6), // 随机颜色
+                transparent: true,
+                opacity: 0.9,
+                emissive: new THREE.Color().setHSL(Math.random(), 0.5, 0.2), // 随机自发光色
+                shininess: 60
+            });
+            const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            ball.position.set(x, y, z);
+            ball.userData = { // 存储相关数据
+                name: name,
+                originalColor: ball.material.color.clone(),
+                originalEmissive: ball.material.emissive.clone()
+            };
+
+            // 创建名字标签 (使用 CanvasTexture)
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const fontSize = 24; // 增大字体以便看清
+            const padding = 10;
+            context.font = `bold ${fontSize}px Arial`;
+            const textMetrics = context.measureText(name);
+            const textWidth = textMetrics.width;
+
+            // 设置 Canvas 尺寸以适应文本
+            canvas.width = textWidth + padding * 2;
+            canvas.height = fontSize + padding * 2; // 稍微增加高度
+
+             // 绘制背景 (透明)
+            context.fillStyle = 'rgba(0, 0, 0, 0)'; // 透明背景
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制文本
+            context.fillStyle = 'white'; // 白色字体
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.shadowColor = "rgba(0, 0, 0, 0.8)"; // 更深的阴影
+            context.shadowOffsetX = 1;
+            context.shadowOffsetY = 1;
+            context.shadowBlur = 3; // 模糊效果
+            context.fillText(name, canvas.width / 2, canvas.height / 2); // 居中绘制
+
+            // 创建纹理和 Sprite
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true; // 确保纹理更新
+            const labelMaterial = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false, // 使标签始终在球体之上
+                sizeAttenuation: true // 大小随距离衰减
+            });
+            const label = new THREE.Sprite(labelMaterial);
+
+            // 调整标签大小和位置
+            const scaleFactor = 0.018; // 调整缩放因子以匹配字体大小
+            label.scale.set(canvas.width * scaleFactor, canvas.height * scaleFactor, 1);
+            label.position.set(0, 0.65, 0); // 稍微上移标签
+
+            ball.add(label); // 将标签添加到球体上
+            nameGroup.add(ball); // 将球体添加到 nameGroup
+            return ball;
+        }
+
+        // 清理并重新创建所有名字球体
+        function createNameBalls() {
+            // 清理旧的球体和资源
+            while (nameGroup.children.length > 0) {
+                const ball = nameGroup.children[0];
+                nameGroup.remove(ball);
+                // 清理 Sprite 和材质纹理
+                ball.children.forEach(child => {
+                    if (child instanceof THREE.Sprite) {
+                         if (child.material.map) child.material.map.dispose();
+                         child.material.dispose();
+                    }
+                });
+                 // 清理球体几何体和材质
+                if (ball.geometry) ball.geometry.dispose();
+                if (ball.material) ball.material.dispose();
+            }
+            nameBalls = []; // 清空数组
+
+            // 获取还未中奖的参与者
+            const availableParticipants = filterParticipants(participants);
+            if (availableParticipants.length === 0) {
+                console.log("没有符合条件的参与者可供抽奖！");
+                checkAndUpdateStartButtonState(); // 更新按钮状态
+                return; // 没有人可以抽了
+            }
+
+            // 为每个可用参与者创建球体
+            availableParticipants.forEach((name, index) => {
+                const ball = createNameBall(name, index, availableParticipants.length);
+                nameBalls.push(ball);
+            });
+            console.log("创建了 " + nameBalls.length + " 个姓名球体。");
+            checkAndUpdateStartButtonState(); // 更新按钮状态
+        }
+
+        // 过滤掉已经中奖的参与者
+        function filterParticipants(allParticipants) {
+            const allWinnersSet = new Set();
+             // 将所有已中奖者添加到 Set 中
+            Object.values(prizeHistory).forEach(winnersArray => {
+                winnersArray.forEach(winner => allWinnersSet.add(winner));
+            });
+            return allParticipants.filter(name => !allWinnersSet.has(name));
+        }
+
+        // 检查当前选定奖项的名额是否已满
+        function isPrizeLimitReached() {
+            const limit = prizeConfig[currentPrizeLevel].count;
+            // 如果限制是 999 (不限)，则永远不会满
+            if (limit === 999) return false;
+            return prizeHistory[currentPrizeLevel].length >= limit;
+        }
+
+        // 检查所有主要奖项（非优胜奖）是否都已抽满
+        function checkIfAllMainPrizesDrawn() {
+            const mainPrizeLevels = ['first', 'second', 'third'];
+            return mainPrizeLevels.every(level => prizeHistory[level].length >= prizeConfig[level].count);
+        }
+
+        // 检查并根据条件更新开始按钮的可用状态
+        function checkAndUpdateStartButtonState() {
+            const availableParticipants = filterParticipants(participants);
+             if (isLotteryFinished || isPrizeLimitReached() || availableParticipants.length === 0) {
+                 startBtn.disabled = true;
+             } else {
+                 startBtn.disabled = false;
+             }
+        }
+
+
+        // --- 动画循环 ---
+        let lastTime = 0;
+        function animate(time) {
+            const delta = (time - lastTime) * 0.001; // 时间差，单位秒
+            lastTime = time;
+            requestAnimationFrame(animate); // 请求下一帧
+
+            // 背景和粒子效果旋转
+            mainGroup.rotation.y += 0.005 + rotationSpeed * 0.05; // Y轴旋转
+            mainGroup.rotation.x += 0.003 + rotationSpeed * 0.03; // X轴微旋转
+
+            // 如果正在抽奖旋转
+            if (isRotating) {
+                // 名字球体容器旋转 (使用 Quaternion 实现更平滑的随机旋转)
+                const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.8 + 0.2, Math.random() - 0.5).normalize(); // 随机旋转轴，Y轴分量稍大
+                const angle = rotationSpeed * 6; // 旋转角度
+                const rotation = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+                nameGroup.quaternion.premultiply(rotation); // 应用旋转
+
+                // 如果请求停止，则逐渐减速
+                if (stopRequested && rotationSpeed > 0.001) { // 设定一个停止阈值
+                     rotationSpeed *= (slowdownFactor - (1 - slowdownFactor) * 0.05 * delta * 60); // 平滑减速，考虑帧率影响
+                     rotationSpeed = Math.max(rotationSpeed, 0.001); // 防止速度过小
+                 } else if (stopRequested && rotationSpeed <= 0.001) {
+                     // 速度足够慢，显示获胜者
+                     showWinner();
+                 }
+            }
+
+            // 让名字标签始终朝向摄像机
+            const cameraWorldPosition = new THREE.Vector3();
+            camera.getWorldPosition(cameraWorldPosition);
+            nameBalls.forEach(ball => {
+                ball.children.forEach(child => {
+                    if (child instanceof THREE.Sprite) {
+                        // 不需要 lookAt，Sprite 默认朝向屏幕
+                        // child.lookAt(cameraWorldPosition); // 如果需要特定朝向可以取消注释
+                    }
+                });
+                 // 如果是高亮的球体，应用脉冲效果
+                if (ball === highlightBall) {
+                     const pulseFactor = 0.6 + Math.sin(time * 0.006) * 0.4; // 调整脉冲频率和幅度
+                     ball.material.emissiveIntensity = pulseFactor * 1.8 + 0.6; // 调整亮度范围
+                     ball.scale.setScalar(1 + pulseFactor * 0.15); // 调整大小变化范围
+                }
+            });
+
+            // 渲染场景
+            renderer.render(scene, camera);
+        }
+
+        // --- 抽奖控制逻辑 ---
+
+        // 开始抽奖
+        function startLottery() {
+             // 检查是否所有主要奖项已抽完
+            if (isLotteryFinished) {
+                alert("所有主要奖项已抽取完毕！");
+                return;
+            }
+            // 检查当前奖项名额
+            if (isPrizeLimitReached()) {
+                alert(`${prizeConfig[currentPrizeLevel].name} (${prizeHistory[currentPrizeLevel].length}/${prizeConfig[currentPrizeLevel].count}) 名额已满！请选择其他奖项或已抽完。`);
+                return;
+            }
+            // 重新生成名字球体（只包含未中奖者）
+            createNameBalls();
+             // 检查是否有可抽奖的人
+            if (nameBalls.length === 0) {
+                alert("没有符合条件的参与者可供抽奖！");
+                startBtn.disabled = true; // 禁用开始按钮
+                return;
+            }
+
+            // 尝试播放背景音乐（如果已交互过或正在播放）
+            if (musicPlayedOnce || !backgroundMusic.paused) {
+                 // 检查是否真的在播放，避免重复调用 play 导致错误
+                 if(backgroundMusic.paused) {
+                    backgroundMusic.play().catch(err => console.log("开始抽奖时播放音频失败:", err));
+                 }
+            }
+
+            // 设置状态
+            isRotating = true;
+            rotationSpeed = initialRotationSpeed; // 重置旋转速度
+            stopRequested = false;
+            winner = null; // 清除上一轮获胜者
+            resultDisplay.style.opacity = 0; // 隐藏结果显示
+            winnerSpotlight.style.opacity = 0; // 隐藏聚光灯
+
+            // 重置可能存在的高亮球体状态
+            if (highlightBall) {
+                highlightBall.material.emissive.copy(highlightBall.userData.originalEmissive);
+                highlightBall.material.emissiveIntensity = 1.0;
+                highlightBall.scale.set(1, 1, 1);
+                highlightBall = null;
+            }
+
+            // 更新按钮和下拉框状态
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            prizeLevelSelect.disabled = true;
+        }
+
+        // 请求停止抽奖
+        function stopLottery() {
+            if (!isRotating || stopRequested) return; // 防止重复点击
+            stopRequested = true;
+            stopBtn.disabled = true; // 禁用停止按钮，等待动画结束
+
+            // 确保有球体可选
+            if (nameBalls.length > 0) {
+                // 随机选择一个获胜者（在减速前就确定）
+                const winnerIndex = Math.floor(Math.random() * nameBalls.length);
+                winner = nameBalls[winnerIndex].userData.name;
+                console.log("选定获胜者 (动画停止前):", winner);
+                // 注意：真正的结果显示和记录在 showWinner 函数中完成
+            } else {
+                // 理论上 startLottery 会阻止这种情况，但以防万一
+                console.error("停止抽奖，但没有可用的参与者球体!");
+                isRotating = false; // 停止旋转
+                rotationSpeed = 0;
+                stopRequested = false; // 重置状态
+                winner = null;
+                checkAndUpdateStartButtonState(); // 检查开始按钮状态
+                prizeLevelSelect.disabled = false; // 启用下拉框
+                alert("没有可抽奖的参与者！");
+            }
+        }
+
+        // 动画停止后显示获胜者
+        function showWinner() {
+             // 确保是正常停止且有获胜者
+            if (!winner || !stopRequested || isRotating) {
+                 console.log("ShowWinner 条件不满足，可能是提前调用或状态错误。", {winner, stopRequested, isRotating});
+                 // 如果是因为没有可选者导致的停止，需要重置UI
+                 if (!isRotating && !winner && stopRequested) {
+                     stopRequested = false;
+                     checkAndUpdateStartButtonState();
+                     prizeLevelSelect.disabled = false;
+                 }
+                 return;
+            }
+
+            // 状态确认：旋转已停止
+            isRotating = false;
+            rotationSpeed = 0;
+
+            const prizeInfo = prizeConfig[currentPrizeLevel];
+
+            // 将获胜者添加到对应奖项的历史记录中 (如果尚未添加)
+            // 注意：这里需要检查 prizeHistory[currentPrizeLevel] 是否存在
+            if (prizeHistory[currentPrizeLevel] && !prizeHistory[currentPrizeLevel].includes(winner)) {
+                prizeHistory[currentPrizeLevel].push(winner);
+                console.log("获胜者已添加到历史:", currentPrizeLevel, winner);
+                saveAndDisplayResults(); // 保存并更新显示
+            } else if (!prizeHistory[currentPrizeLevel]) {
+                 console.error(`奖项历史记录 key "${currentPrizeLevel}" 不存在!`);
+            } else {
+                 console.log("获胜者本轮已在历史中或重复抽取:", currentPrizeLevel, winner); // 可能重复？需要检查逻辑
+            }
+
+            // 显示中奖信息
+            resultDisplay.className = ''; // 清除可能存在的 final-message 类
+            resultDisplay.textContent = `恭喜 ${winner} 获得 ${prizeInfo.name}！奖金 ${prizeInfo.amount} 元`;
+            resultDisplay.style.opacity = 1; // 淡入显示
+
+            // 显示聚光灯效果
+            winnerSpotlight.style.opacity = 1;
+
+            // 找到并高亮获胜者的球体
+            highlightBall = nameBalls.find(ball => ball.userData.name === winner);
+            if (highlightBall) {
+                // 确保 userData 存在
+                if (!highlightBall.userData.originalEmissive) {
+                    highlightBall.userData.originalEmissive = highlightBall.material.emissive.clone();
+                 }
+                // 设置高亮颜色为奖项颜色
+                highlightBall.material.emissive.setHex(prizeInfo.color);
+                highlightBall.material.needsUpdate = true;
+                // 初始不设置 Intensity，让动画循环来控制脉冲
+            } else {
+                console.warn("未找到获胜者的球体:", winner);
+            }
+
+            // 创建纸屑效果
+            createConfetti();
+
+            // 检查是否所有主要奖项都抽完了
+            if (checkIfAllMainPrizesDrawn() && !isLotteryFinished) {
+                isLotteryFinished = true; // 标记抽奖结束
+                console.log("所有主要奖项已抽取完毕！");
+                // 延迟显示结束语
+                setTimeout(() => {
+                     resultDisplay.textContent = "所有主要奖项抽取完毕!"; // 可以自定义结束语
+                     resultDisplay.className = 'final-message'; // 应用结束语样式
+                     resultDisplay.style.opacity = 1;
+                     winnerSpotlight.style.opacity = 0; // 隐藏聚光灯
+
+                    // 取消高亮
+                    if (highlightBall) {
+                        highlightBall.material.emissive.copy(highlightBall.userData.originalEmissive);
+                        highlightBall.material.emissiveIntensity = 1.0;
+                        highlightBall.scale.set(1, 1, 1);
+                        highlightBall = null;
+                     }
+                    // 禁用所有控制按钮和下拉框
+                     startBtn.disabled = true;
+                     stopBtn.disabled = true;
+                     prizeLevelSelect.disabled = true;
+
+                     // 可以在这里选择是否继续抽优胜奖，或者完全结束
+                     // 如果要继续抽优胜奖，可以在这里提示，并只禁用一二三等奖的选项
+
+                 }, 4000); // 延迟时间
+            } else {
+                 // 如果抽奖未结束，重置按钮状态，准备下一轮
+                 stopRequested = false; // 重置停止请求状态
+                 checkAndUpdateStartButtonState(); // 检查并更新开始按钮状态
+                 prizeLevelSelect.disabled = false; // 重新启用奖项选择
+            }
+        }
+
+        // 创建纸屑效果
+        function createConfetti() {
+            const confettiCount = 150; // 纸屑数量
+            const prizeColor = new THREE.Color(prizeConfig[currentPrizeLevel].color || 0xffffff); // 获取奖项颜色，默认为白色
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+
+                // 颜色组合：奖项颜色 + 金色 + 白色 + 其他喜庆颜色
+                const colors = [
+                    `rgb(${Math.floor(prizeColor.r * 255)}, ${Math.floor(prizeColor.g * 255)}, ${Math.floor(prizeColor.b * 255)})`,
+                    '#FFDA61', '#ffffff', '#FF6B6B', '#4ECDC4', '#f9c83b'
+                ];
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+                // 随机大小和形状
+                const size = Math.random() * 8 + 4; // 4px 到 12px
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.borderRadius = Math.random() > 0.4 ? '50%' : '0'; // 圆形或方形
+                confetti.style.opacity = Math.random() * 0.6 + 0.4; // 透明度
+
+                // 随机初始位置和动画参数
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = `-${size * 3}px`; // 从屏幕上方开始
+                container.appendChild(confetti); // 添加到 container
+
+                const animationDuration = Math.random() * 4 + 3; // 动画时长 3-7 秒
+                const fallDelay = Math.random() * 1.5; // 延迟 0-1.5 秒
+                const horizontalMovement = (Math.random() - 0.5) * window.innerWidth * 0.6; // 水平漂移范围
+                const rotation = Math.random() * 720 - 360; // 旋转角度
+
+                // 使用 Web Animations API 创建动画
+                confetti.animate([
+                    { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 }, // 起始状态
+                    { transform: `translate(${horizontalMovement}px, ${window.innerHeight + size * 3}px) rotate(${rotation}deg)`, opacity: 0 } // 结束状态 (落到屏幕外)
+                ], {
+                    duration: animationDuration * 1000,
+                    delay: fallDelay * 1000,
+                    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' // 缓动函数
+                }).onfinish = () => confetti.remove(); // 动画结束后移除元素
+            }
+        }
+
+        // --- 窗口大小调整 ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 初始化 ---
+        startBtn.addEventListener('click', startLottery);
+        stopBtn.addEventListener('click', stopLottery);
+
+        // 页面加载时初始化
+        updateResultsDisplay(); // 显示已保存的中奖名单
+        createNameBalls(); // 创建初始的名字球体
+        checkAndUpdateStartButtonState(); // 检查初始按钮状态
+        prizeLevelSelect.value = currentPrizeLevel; // 确保下拉框显示正确的初始值
+        animate(0); // 开始动画循环
+
+    </script>
+</body>
+</html>
